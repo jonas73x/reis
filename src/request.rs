@@ -452,9 +452,7 @@ impl EisRequestConverter {
         };
         match request {
             eis::device::Request::Release => {
-                self.queue_request(EisRequest::DeviceClosedByClient(DeviceClosedByClient {
-                    device,
-                }));
+                self.queue_request(EisRequest::DeviceClosed(DeviceClosed { device }));
             }
             eis::device::Request::StartEmulating {
                 last_serial,
@@ -1100,7 +1098,7 @@ pub enum EisRequest {
     // TODO connect, disconnect
     Disconnect,
     Bind(Bind),
-    DeviceClosedByClient(DeviceClosedByClient),
+    DeviceClosed(DeviceClosed),
     // Only for sender context
     RequestDevice(RequestDevice),
     Frame(Frame),
@@ -1142,7 +1140,7 @@ impl EisRequest {
             Self::Disconnect
             | Self::Bind(_)
             | Self::RequestDevice(_)
-            | Self::DeviceClosedByClient(_)
+            | Self::DeviceClosed(_)
             | Self::Frame(_)
             | Self::Ready(_)
             | Self::DeviceStartEmulating(_)
@@ -1154,7 +1152,7 @@ impl EisRequest {
     #[must_use]
     pub fn device(&self) -> Option<&Device> {
         match self {
-            Self::DeviceClosedByClient(evt) => Some(&evt.device),
+            Self::DeviceClosed(evt) => Some(&evt.device),
             Self::Frame(evt) => Some(&evt.device),
             Self::Ready(evt) => Some(&evt.device),
             Self::DeviceStartEmulating(evt) => Some(&evt.device),
@@ -1238,7 +1236,7 @@ pub struct DeviceStopEmulating {
 /// should perform any cleanup, then call [`Device::remove`] to complete
 /// the teardown and send the protocol `destroyed` events.
 #[derive(Clone, Debug, PartialEq)]
-pub struct DeviceClosedByClient {
+pub struct DeviceClosed {
     /// The device the client released.
     pub device: Device,
 }
@@ -1453,7 +1451,7 @@ macro_rules! impl_device_trait {
 }
 
 impl_device_trait!(Frame; time);
-impl_device_trait!(DeviceClosedByClient);
+impl_device_trait!(DeviceClosed);
 impl_device_trait!(DeviceStartEmulating);
 impl_device_trait!(DeviceStopEmulating);
 impl_device_trait!(PointerMotion; time);
